@@ -1,0 +1,26 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 381492047863.dkr.ecr.us-east-1.amazonaws.com
+
+  pre_build:
+    commands:
+      - echo Preparing to build the Docker image...
+      - echo "FROM httpd:2.4" > Dockerfile
+      - echo "COPY ./index.html /usr/local/apache2/htdocs/index.html" >> Dockerfile
+      - echo "COPY ./index.js /usr/local/apache2/htdocs/index.js" >> Dockerfile
+
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t 381492047863.dkr.ecr.us-east-1.amazonaws.com/my-ai-app:latest .
+      - echo Pushing the Docker image...
+      - docker push 381492047863.dkr.ecr.us-east-1.amazonaws.com/my-ai-app:latest
+
+  post_build:
+    commands:
+      - echo Forcing a new deployment of the ECS service...
+      - aws ecs update-service --cluster my-ecs-cluster --service my-ai-app-service --force-new-deployment
